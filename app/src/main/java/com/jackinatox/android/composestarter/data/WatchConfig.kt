@@ -13,6 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.composestarter.data
+package com.jackinatox.android.composestarter.data
 
 data class WatchConfig(val url: String, val apiKey: String)

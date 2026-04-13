@@ -15,7 +15,7 @@
  */
 package presentation
 
-import com.example.android.wearable.composestarter.presentation.SampleDialog
+import com.jackinatox.android.composestarter.presentation.SampleDialog
 import com.google.android.horologist.screenshots.rng.WearDevice
 import com.google.android.horologist.screenshots.rng.WearScreenshotTest
 import org.junit.Test

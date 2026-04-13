@@ -25,10 +25,10 @@ plugins {
 android {
     compileSdk = 36
 
-    namespace = "com.example.android.wearable.composestarter"
+    namespace = "com.jackinatox.android.composestarter"
 
     defaultConfig {
-        applicationId = "com.example.android.wearable.composestarter"
+        applicationId = "com.jackinatox.android.composestarter"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

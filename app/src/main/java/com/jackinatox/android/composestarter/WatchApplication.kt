@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.composestarter.presentation.theme
+package com.jackinatox.android.composestarter
 
-import androidx.compose.runtime.Composable
-import androidx.wear.compose.material3.CardColors
-import androidx.wear.compose.material3.CardDefaults
-import androidx.wear.compose.material3.MaterialTheme
+import android.app.Application
+import android.content.Context
+import androidx.datastore.preferences.preferencesDataStore
 
-object AppCardDefaults {
-    @Composable
-    fun cardColors(): CardColors =
-        CardDefaults.cardColors(
-            titleColor = MaterialTheme.colorScheme.tertiary
-        )
-}
+class WatchApplication : Application()
+
+val Context.watchConfigDataStore by preferencesDataStore(name = "watch_config")

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.composestarter.presentation
+package com.jackinatox.android.composestarter.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.android.wearable.composestarter.data.ConfigRepository
-import com.example.android.wearable.composestarter.data.DashboardRepository
-import com.example.android.wearable.composestarter.data.WatchConfig
+import com.jackinatox.android.composestarter.data.ConfigRepository
+import com.jackinatox.android.composestarter.data.DashboardRepository
+import com.jackinatox.android.composestarter.data.WatchConfig
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

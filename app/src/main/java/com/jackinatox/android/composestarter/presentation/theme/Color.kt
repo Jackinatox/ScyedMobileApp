@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.composestarter.presentation.theme
+package com.jackinatox.android.composestarter.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.wear.compose.material3.ColorScheme

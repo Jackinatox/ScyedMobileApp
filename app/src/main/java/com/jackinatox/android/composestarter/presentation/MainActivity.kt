@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.composestarter.presentation
+package com.jackinatox.android.composestarter.presentation
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -55,14 +55,11 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TitleCard
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
-import androidx.wear.compose.navigation.SwipeDismissableNavHost
-import androidx.wear.compose.navigation.composable
-import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
-import com.example.android.wearable.composestarter.R
-import com.example.android.wearable.composestarter.presentation.theme.AppCardDefaults
-import com.example.android.wearable.composestarter.presentation.theme.WearAppTheme
+import com.jackinatox.android.composestarter.R
+import com.jackinatox.android.composestarter.presentation.theme.AppCardDefaults
+import com.jackinatox.android.composestarter.presentation.theme.WearAppTheme
 import com.google.android.horologist.compose.layout.ColumnItemType
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadding
 
@@ -99,6 +96,7 @@ fun WearApp(viewModel: MainViewModel) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
+
                 is WatchUiState.NoPairing -> PairingScreen()
                 is WatchUiState.Dashboard ->
                     DashboardScreen(state = state, onRefresh = viewModel::refreshNow)

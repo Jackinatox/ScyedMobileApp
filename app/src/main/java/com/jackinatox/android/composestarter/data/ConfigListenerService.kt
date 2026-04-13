@@ -13,33 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.composestarter.data
+package com.jackinatox.android.composestarter.data
 
-import com.google.android.gms.wearable.DataEvent
-import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataMapItem
+import android.util.Log
+import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
+import org.json.JSONObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
+
+private const val TAG = "WearConfigListner"
+
 class ConfigListenerService : WearableListenerService() {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val configRepository by lazy { ConfigRepository(applicationContext) }
 
-    override fun onDataChanged(dataEvents: DataEventBuffer) {
-        dataEvents.forEach { event ->
-            if (
-                event.type == DataEvent.TYPE_CHANGED &&
-                    event.dataItem.uri.path == "/watch/config"
-            ) {
-                val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
-                val url = dataMap.getString("url") ?: return@forEach
-                val apiKey = dataMap.getString("api_key") ?: return@forEach
+    override fun onMessageReceived(message: MessageEvent) {
+        Log.d(TAG, "Message received: ${message.path}")
+        if (message.path == "/config/initialSetup") {
+            try {
+                val json = JSONObject(String(message.data, Charsets.UTF_8))
+                val url = json.getString("url")
+                val apiKey = json.getString("api_key")
+                Log.v(TAG, "Got url: $url and key: $apiKey")
                 scope.launch { configRepository.saveConfig(WatchConfig(url, apiKey)) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to parse config message", e)
             }
         }
     }

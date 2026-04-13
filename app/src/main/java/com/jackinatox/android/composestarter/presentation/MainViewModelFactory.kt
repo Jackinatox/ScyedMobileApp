@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.composestarter.presentation
+package com.jackinatox.android.composestarter.presentation
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.android.wearable.composestarter.data.ConfigRepository
-import com.example.android.wearable.composestarter.data.DashboardRepository
+import com.jackinatox.android.composestarter.data.ConfigRepository
+import com.jackinatox.android.composestarter.data.DashboardRepository
 
 class MainViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")

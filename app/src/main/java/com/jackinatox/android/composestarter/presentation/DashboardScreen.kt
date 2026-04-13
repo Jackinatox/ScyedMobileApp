@@ -13,47 +13,79 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.wearable.composestarter.presentation
+package com.jackinatox.android.composestarter.presentation
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.EdgeButton
+import androidx.wear.compose.material3.EdgeButtonSize
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TitleCard
 import com.google.android.horologist.compose.layout.ColumnItemType
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadding
 
 @Composable
-fun PairingScreen(modifier: Modifier = Modifier) {
+fun DashboardScreen(
+    state: WatchUiState.Dashboard,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val scrollState = rememberTransformingLazyColumnState()
 
     ScreenScaffold(
         scrollState = scrollState,
+        edgeButton = {
+            EdgeButton(onClick = onRefresh, buttonSize = EdgeButtonSize.ExtraSmall) {
+                Text("Refresh")
+            }
+        },
         contentPadding =
             rememberResponsiveColumnPadding(
                 first = ColumnItemType.ListHeader,
-                last = ColumnItemType.BodyText,
+                last = ColumnItemType.Card,
             )
     ) { contentPadding ->
         TransformingLazyColumn(
             state = scrollState,
             contentPadding = contentPadding,
-            modifier = modifier.fillMaxSize()
+            modifier = modifier
         ) {
             item {
-                ListHeader(modifier = Modifier.fillMaxWidth()) { Text("Pair with Phone") }
+                ListHeader(modifier = Modifier.fillMaxWidth()) { Text("Dashboard") }
             }
-            item {
-                Text(
-                    text = "Open the companion app on your phone to configure this watch.",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+            if (state.isRefreshing) {
+                item { CircularProgressIndicator() }
+            }
+
+            if (state.error != null) {
+                item {
+                    TitleCard(
+                        title = { Text("Error") },
+                        onClick = {},
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(state.error)
+                    }
+                }
+            }
+
+            state.data.forEach { (key, value) ->
+                item(key = key) {
+                    TitleCard(
+                        title = { Text(key) },
+                        onClick = {},
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(value)
+                    }
+                }
             }
         }
     }
