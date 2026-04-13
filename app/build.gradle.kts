@@ -19,6 +19,7 @@ plugins {
     id("com.android.application")
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 android {
@@ -102,6 +103,24 @@ dependencies {
     implementation(libs.wear.compose.navigation)
 
     implementation(libs.androidx.ui.test.manifest)
+
+    // Wearable Data Layer
+    implementation(libs.play.services.wearable)
+
+    // Config persistence
+    implementation(libs.androidx.datastore.preferences)
+
+    // ViewModel + Lifecycle
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // Networking + JSON
+    implementation(libs.okhttp)
+    implementation(libs.kotlinx.serialization.json)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 

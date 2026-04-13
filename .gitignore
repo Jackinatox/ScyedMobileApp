@@ -13,3 +13,42 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android Studio
+/.idea/
+*.apk
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+
+# Gradle
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# NDK
+obj/
+
+# Kotlin
+*.kt.bak
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.war
+*.ear
