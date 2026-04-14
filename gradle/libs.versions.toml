@@ -33,6 +33,7 @@ androidx-material-icons-core = { module = "androidx.compose.material:material-ic
 androidx-protolayout = { module = "androidx.wear.protolayout:protolayout", version.ref = "protolayout" }
 androidx-protolayout-expression = { module = "androidx.wear.protolayout:protolayout-expression", version.ref = "protolayout-expression" }
 androidx-protolayout-material = { module = "androidx.wear.protolayout:protolayout-material", version.ref = "protolayout-material" }
+androidx-protolayout-material3 = { module = "androidx.wear.protolayout:protolayout-material3", version.ref = "protolayout" }
 androidx-tiles = { module = "androidx.wear.tiles:tiles", version.ref = "tiles" }
 androidx-tiles-renderer = { module = "androidx.wear.tiles:tiles-renderer", version.ref = "tiles-renderer" }
 androidx-tiles-testing = { module = "androidx.wear.tiles:tiles-testing", version.ref = "tiles-testing" }

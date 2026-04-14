@@ -85,6 +85,9 @@ dependencies {
     // Use to utilize components and layouts with Material Design in your tiles
     implementation(libs.androidx.protolayout.material)
 
+    // Use to utilize Material 3 tile layouts/components that are round-screen aware
+    implementation(libs.androidx.protolayout.material3)
+
     // Use to include dynamic expressions in your tiles
     implementation(libs.androidx.protolayout.expression)
 

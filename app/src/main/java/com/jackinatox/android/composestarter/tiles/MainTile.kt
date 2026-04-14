@@ -1,330 +1,287 @@
 package com.jackinatox.android.composestarter.tiles
 
-import android.graphics.Color
-import androidx.wear.protolayout.ActionBuilders
+import android.content.ComponentName
 import androidx.wear.protolayout.ColorBuilders.ColorProp
-import androidx.wear.protolayout.DeviceParametersBuilders
-import androidx.wear.protolayout.LayoutElementBuilders
-import androidx.wear.protolayout.LayoutElementBuilders.FontStyle
-import androidx.wear.protolayout.LayoutElementBuilders.Layout
-import androidx.wear.protolayout.ModifiersBuilders
-import androidx.wear.protolayout.ResourceBuilders.Resources
+import androidx.wear.protolayout.ActionBuilders
+import androidx.wear.protolayout.DimensionBuilders.dp
+import androidx.wear.protolayout.DimensionBuilders.expand
+import androidx.wear.protolayout.DimensionBuilders.weight
+import androidx.wear.protolayout.LayoutElementBuilders.Box
+import androidx.wear.protolayout.LayoutElementBuilders.Column
+import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Row
+import androidx.wear.protolayout.LayoutElementBuilders.Spacer
+import androidx.wear.protolayout.ModifiersBuilders.Background
+import androidx.wear.protolayout.ModifiersBuilders.Clickable
+import androidx.wear.protolayout.ModifiersBuilders.Corner
+import androidx.wear.protolayout.ModifiersBuilders.Modifiers
+import androidx.wear.protolayout.ModifiersBuilders.Padding
+import androidx.wear.protolayout.ModifiersBuilders.Semantics
 import androidx.wear.protolayout.TimelineBuilders.Timeline
-import androidx.wear.protolayout.TimelineBuilders.TimelineEntry
-import androidx.wear.tiles.RequestBuilders
+import androidx.wear.protolayout.material3.CardDefaults.filledTonalCardColors
+import androidx.wear.protolayout.material3.MaterialScope
+import androidx.wear.protolayout.material3.Typography
+import androidx.wear.protolayout.material3.primaryLayout
+import androidx.wear.protolayout.material3.text
+import androidx.wear.protolayout.material3.titleCard
+import androidx.wear.protolayout.modifiers.LayoutModifier
+import androidx.wear.protolayout.modifiers.contentDescription
+import androidx.wear.protolayout.TypeBuilders.StringProp
+import androidx.wear.protolayout.types.LayoutColor
+import androidx.wear.protolayout.types.layoutString
+import androidx.wear.tiles.Material3TileService
+import androidx.wear.tiles.RequestBuilders.TileRequest
 import androidx.wear.tiles.TileBuilders.Tile
-import androidx.wear.tiles.TileService
-import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
 import com.jackinatox.android.composestarter.data.ConfigRepository
 import com.jackinatox.android.composestarter.data.DashboardData
 import com.jackinatox.android.composestarter.data.DashboardRepository
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import com.jackinatox.android.composestarter.presentation.MainActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.flow.first
 
-const val RESOURCES_VERSION = "1"
 private const val FRESHNESS_INTERVAL_MS = 60_000L
 
-private val GREEN = Color.parseColor("#6DD58C")
-private val RED = Color.parseColor("#FF6B6B")
-private val AMBER = Color.parseColor("#FFB74D")
-private val CYAN = Color.parseColor("#7DD3FC")
-private val WHITE = Color.WHITE
-private val MUTED = Color.parseColor("#A7B0BE")
-private val MUTED_DARK = Color.parseColor("#7D8794")
-private val SURFACE = Color.parseColor("#101418")
-private val BORDER = Color.parseColor("#27313A")
-private val PANEL = Color.parseColor("#161D24")
-
-class MainTile : TileService() {
-    override fun onTileRequest(request: RequestBuilders.TileRequest): ListenableFuture<Tile> {
-        val root = renderTile(request.deviceConfiguration)
-        val tile = Tile.Builder()
-            .setResourcesVersion(RESOURCES_VERSION)
-            .setFreshnessIntervalMillis(FRESHNESS_INTERVAL_MS)
-            .setTileTimeline(
-                Timeline.Builder()
-                    .addTimelineEntry(
-                        TimelineEntry.Builder()
-                            .setLayout(Layout.Builder().setRoot(root).build())
-                            .build()
+class MainTile : Material3TileService(allowDynamicTheme = false) {
+    override suspend fun MaterialScope.tileResponse(requestParams: TileRequest): Tile {
+        val layout =
+            when (val config = ConfigRepository(this@MainTile).configFlow.first()) {
+                null ->
+                    stateLayout(
+                        title = "Pair phone",
+                        message = "Missing URL/API key",
                     )
-                    .build()
-            )
-            .build()
 
-        return Futures.immediateFuture(tile)
-    }
-
-    override fun onTileResourcesRequest(request: RequestBuilders.ResourcesRequest): ListenableFuture<Resources> =
-        Futures.immediateFuture(
-            Resources.Builder()
-                .setVersion(RESOURCES_VERSION)
-                .build()
-        )
-
-    private fun renderTile(
-        deviceParameters: DeviceParametersBuilders.DeviceParameters,
-    ): LayoutElementBuilders.LayoutElement {
-        val compact = deviceParameters.screenWidthDp <= 192
-        val config = runBlocking { ConfigRepository(applicationContext).configFlow.first() }
-
-        val body = when {
-            config == null -> emptyState("Pair app", "Missing URL/API key", compact)
-            else -> {
-                val result = runBlocking { DashboardRepository().fetchData(config) }
-                result.fold(
-                    onSuccess = { dashboardLayout(it, compact) },
-                    onFailure = { emptyState("Fetch failed", it.message ?: "Unknown error", compact) }
-                )
+                else ->
+                    DashboardRepository().fetchData(config).fold(
+                        onSuccess = { dashboardLayout(it) },
+                        onFailure = {
+                            stateLayout(
+                                title = "Fetch failed",
+                                message = compactMessage(it.message ?: "Unknown error"),
+                            )
+                        },
+                    )
             }
-        }
 
-        return LayoutElementBuilders.Box.Builder()
-            .setWidth(expand())
-            .setHeight(expand())
-            .setModifiers(
-                ModifiersBuilders.Modifiers.Builder()
-                    .setBackground(
-                        ModifiersBuilders.Background.Builder()
-                            .setColor(argb(SURFACE))
-                            .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(16f)).build())
-                            .build()
-                    )
-                    .setPadding(
-                        ModifiersBuilders.Padding.Builder()
-                            .setStart(dp(if (compact) 20f else 16f))
-                            .setTop(dp(if (compact) 18f else 14f))
-                            .setEnd(dp(if (compact) 20f else 16f))
-                            .setBottom(dp(if (compact) 18f else 14f))
-                            .build()
-                    )
-                    .setClickable(
-                        ModifiersBuilders.Clickable.Builder()
-                            .setId("open-app")
-                            .setOnClick(ActionBuilders.LaunchAction.Builder().build())
-                            .build()
-                    )
-                    .build()
-            )
-            .addContent(body)
+        return Tile.Builder()
+            .setFreshnessIntervalMillis(FRESHNESS_INTERVAL_MS)
+            .setTileTimeline(Timeline.fromLayoutElement(layout))
             .build()
     }
 
-    private fun dashboardLayout(
-        data: DashboardData,
-        compact: Boolean,
-    ): LayoutElementBuilders.LayoutElement {
-        val statusColor = if (data.status.equals("ok", ignoreCase = true)) GREEN else RED
-        val dbColor = if (data.dbConnected) GREEN else RED
-        val ticketColor = if (data.ticketsOpen > 0) RED else GREEN
-        val load = data.loadAverage.firstOrNull()?.let { "%.1f".format(Locale.US, it) } ?: "--"
-        val syncedAt = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(data.fetchedAt))
-        val apiLabel = if (data.status.equals("ok", ignoreCase = true)) "API OK" else data.status.uppercase(Locale.getDefault())
-        val dbLabel = if (data.dbConnected) data.dbLatency.ifBlank { "DB OK" } else "DB DOWN"
-
-        return column(
-            statusChip(apiLabel, dbLabel, syncedAt, statusColor, dbColor, compact),
-            spacer(if (compact) 6f else 8f),
-            metricBand(
-                compactMetric("USR", shortNumber(data.usersTotal), WHITE, compact),
-                compactMetric("SRV", "${data.gameServersActive}/${data.gameServersTotal}", GREEN, compact),
-                compact
-            ),
-            spacer(4f),
-            metricBand(
-                compactMetric("ORD", "${data.ordersPending}/${data.ordersPaid}", AMBER, compact),
-                compactMetric("TIX", "${data.ticketsOpen}/${data.ticketsTotal}", ticketColor, compact),
-                compact
-            ),
-            spacer(4f),
-            metricBand(
-                compactMetric("LAT", "${data.latencyMs}ms", latencyColor(data.latencyMs), compact),
-                compactMetric("RSS", trimValue(data.rss), WHITE, compact),
-                compact
-            ),
-            spacer(4f),
-            metricBand(
-                compactMetric("GEO", shortNumber(data.locationsTotal), CYAN, compact),
-                compactMetric("LD", load, loadColor(data.loadAverage.firstOrNull() ?: 0.0), compact),
-                compact
-            ),
-            spacer(5f),
-            centeredText(
-                "${data.hostname.take(7)} ${trimValue(data.nodeVersion)} ${trimValue(data.processUptime)}",
-                if (compact) 9f else 10f,
-                MUTED,
-                false
-            )
+    private fun MaterialScope.dashboardLayout(data: DashboardData): LayoutElement =
+        primaryLayout(
+            titleSlot = {
+                text(
+                    text =
+                        "${apiSummary(data)} | ${dbSummary(data)} | ${formatTime(data.fetchedAt)}"
+                            .layoutString,
+                    color = colorScheme.onSurfaceVariant,
+                    typography = Typography.LABEL_SMALL,
+                )
+            },
+            mainSlot = { dashboardGrid(data) },
+            onClick = openDashboardClickable("open-dashboard-root"),
         )
-    }
 
-    private fun emptyState(
+    private fun MaterialScope.dashboardGrid(data: DashboardData): LayoutElement =
+        Column.Builder()
+            .setWidth(expand())
+            .setHeight(expand())
+            .addContent(
+                metricRow(
+                    left =
+                        metricCard(
+                            id = "metric-users",
+                            value = shortNumber(data.usersTotal),
+                            label = "USR",
+                            valueColor = colorScheme.onSurface,
+                            description = "Users ${data.usersTotal}",
+                        ),
+                    right =
+                        metricCard(
+                            id = "metric-servers",
+                            value = "${data.gameServersActive}/${data.gameServersTotal}",
+                            label = "SRV",
+                            valueColor = serverColor(data),
+                            description =
+                                "Game servers ${data.gameServersActive} active of ${data.gameServersTotal}",
+                        ),
+                )
+            )
+            .addContent(verticalSpacer(8f))
+            .addContent(
+                metricRow(
+                    left =
+                        metricCard(
+                            id = "metric-placeholder",
+                            value = "--",
+                            label = "NEXT",
+                            valueColor = colorScheme.onSurfaceVariant,
+                            description = "Placeholder for future metric",
+                        ),
+                    right =
+                        metricCard(
+                            id = "metric-tickets",
+                            value = "${data.ticketsOpen}/${data.ticketsTotal}",
+                            label = "TIX",
+                            valueColor = ticketColor(data),
+                            description =
+                                "Support tickets ${data.ticketsOpen} open of ${data.ticketsTotal}",
+                        ),
+                )
+            )
+            .build()
+
+    private fun metricRow(
+        left: LayoutElement,
+        right: LayoutElement,
+    ): LayoutElement =
+        Row.Builder()
+            .setWidth(expand())
+            .setHeight(weight(1f))
+            .setVerticalAlignment(androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+            .addContent(left)
+            .addContent(horizontalSpacer(8f))
+            .addContent(right)
+            .build()
+
+    private fun MaterialScope.stateLayout(
         title: String,
-        subtitle: String,
-        compact: Boolean,
-    ): LayoutElementBuilders.LayoutElement =
-        column(
-            topPill("DASHBOARD", compact),
-            spacer(8f),
-            centeredText(title, if (compact) 16f else 18f, WHITE, true),
-            spacer(4f),
-            centeredText(subtitle, if (compact) 11f else 13f, MUTED, false)
+        message: String,
+    ): LayoutElement =
+        primaryLayout(
+            titleSlot = { text("Dashboard".layoutString, color = colorScheme.onSurfaceVariant) },
+            mainSlot = {
+                titleCard(
+                    onClick = openDashboardClickable("open-dashboard-state"),
+                    modifier = LayoutModifier.contentDescription("$title. $message"),
+                    height = expand(),
+                    colors = filledTonalCardColors(),
+                    title = { text(title.layoutString) },
+                    content = {
+                        text(
+                            text = message.layoutString,
+                            typography = Typography.BODY_SMALL,
+                            maxLines = 3,
+                        )
+                    },
+                )
+            },
+            onClick = openDashboardClickable("open-dashboard-shell"),
         )
 
-    private fun compactMetric(
+    private fun MaterialScope.metricCard(
+        id: String,
+        value: String,
         label: String,
-        value: String,
-        color: Int,
-        compact: Boolean,
-    ): LayoutElementBuilders.LayoutElement =
-        LayoutElementBuilders.Column.Builder()
-            .setWidth(dp(if (compact) 42f else 48f))
-            .addContent(text(label, 9f, MUTED_DARK, true))
-            .addContent(text(value, if (compact) 15f else 16f, color, true))
-            .build()
-
-    private fun metricBand(
-        left: LayoutElementBuilders.LayoutElement,
-        right: LayoutElementBuilders.LayoutElement,
-        compact: Boolean,
-    ): LayoutElementBuilders.LayoutElement =
-        LayoutElementBuilders.Box.Builder()
-            .setWidth(expand())
-            .setModifiers(
-                ModifiersBuilders.Modifiers.Builder()
-                    .setBackground(
-                        ModifiersBuilders.Background.Builder()
-                            .setColor(argb(PANEL))
-                            .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(10f)).build())
-                            .build()
-                    )
-                    .setPadding(
-                        ModifiersBuilders.Padding.Builder()
-                            .setStart(dp(if (compact) 8f else 10f))
-                            .setTop(dp(5f))
-                            .setEnd(dp(if (compact) 8f else 10f))
-                            .setBottom(dp(5f))
-                            .build()
-                    )
-                    .build()
-            )
-            .addContent(
-                LayoutElementBuilders.Row.Builder()
-                    .setWidth(expand())
-                    .addContent(left)
-                    .addContent(LayoutElementBuilders.Spacer.Builder().setWidth(dp(if (compact) 10f else 14f)).build())
-                    .addContent(right)
-                    .build()
-            )
-            .build()
-
-    private fun statusChip(
-        apiLabel: String,
-        dbLabel: String,
-        syncedAt: String,
-        apiColor: Int,
-        dbColor: Int,
-        compact: Boolean,
-    ): LayoutElementBuilders.LayoutElement =
-        LayoutElementBuilders.Box.Builder()
-            .setWidth(expand())
-            .setModifiers(
-                ModifiersBuilders.Modifiers.Builder()
-                    .setBackground(
-                        ModifiersBuilders.Background.Builder()
-                            .setColor(argb(PANEL))
-                            .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(14f)).build())
-                            .build()
-                    )
-                    .setPadding(
-                        ModifiersBuilders.Padding.Builder()
-                            .setStart(dp(8f))
-                            .setTop(dp(5f))
-                            .setEnd(dp(8f))
-                            .setBottom(dp(5f))
-                            .build()
-                    )
-                    .build()
-            )
-            .addContent(
-                LayoutElementBuilders.Column.Builder()
-                    .setWidth(expand())
-                    .addContent(topPill("DASHBOARD", compact))
-                    .addContent(spacer(3f))
-                    .addContent(centeredText(apiLabel, if (compact) 12f else 13f, apiColor, true))
-                    .addContent(spacer(1f))
-                    .addContent(centeredText("$dbLabel  $syncedAt", if (compact) 9f else 10f, dbColor, false))
-                    .build()
-            )
-            .build()
-
-    private fun topPill(
-        value: String,
-        compact: Boolean,
-    ): LayoutElementBuilders.LayoutElement =
-        centeredText(value, if (compact) 8f else 9f, CYAN, true)
-
-    private fun row(
-        vararg children: LayoutElementBuilders.LayoutElement,
-    ): LayoutElementBuilders.LayoutElement {
-        val builder = LayoutElementBuilders.Row.Builder()
-            .setWidth(expand())
-        children.forEach(builder::addContent)
-        return builder.build()
-    }
-
-    private fun column(
-        vararg children: LayoutElementBuilders.LayoutElement,
-    ): LayoutElementBuilders.LayoutElement {
-        val builder = LayoutElementBuilders.Column.Builder()
-            .setWidth(expand())
+        valueColor: LayoutColor,
+        description: String,
+    ): LayoutElement =
+        Box.Builder()
+            .setWidth(weight(1f))
             .setHeight(expand())
-        children.forEach(builder::addContent)
-        return builder.build()
-    }
+            .setHorizontalAlignment(androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+            .setVerticalAlignment(androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
+            .setModifiers(cardModifiers(id, description))
+            .addContent(
+                Column.Builder()
+                    .setWidth(expand())
+                    .setHorizontalAlignment(
+                        androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER
+                    )
+                    .addContent(
+                        text(
+                            text = value.layoutString,
+                            color = valueColor,
+                            typography = Typography.NUMERAL_SMALL,
+                            maxLines = 1,
+                        )
+                    )
+                    .addContent(verticalSpacer(2f))
+                    .addContent(
+                        text(
+                            text = label.layoutString,
+                            color = colorScheme.onSurfaceVariant,
+                            typography = Typography.LABEL_SMALL,
+                            maxLines = 1,
+                        )
+                    )
+                    .build()
+            )
+            .build()
 
-    private fun spacer(heightDp: Float): LayoutElementBuilders.LayoutElement =
-        LayoutElementBuilders.Spacer.Builder()
+    private fun openDashboardClickable(id: String): Clickable =
+        Clickable.Builder()
+            .setId(id)
+            .setOnClick(
+                ActionBuilders.launchAction(ComponentName(this, MainActivity::class.java))
+            )
+            .build()
+
+    private fun metricPadding(): Padding =
+        Padding.Builder()
+            .setStart(dp(8f))
+            .setTop(dp(8f))
+            .setEnd(dp(8f))
+            .setBottom(dp(8f))
+            .build()
+
+    private fun MaterialScope.cardModifiers(
+        id: String,
+        description: String,
+    ): Modifiers =
+        Modifiers.Builder()
+            .setClickable(openDashboardClickable(id))
+            .setSemantics(
+                Semantics.Builder()
+                    .setContentDescription(StringProp.Builder(description).build())
+                    .build()
+            )
+            .setPadding(metricPadding())
+            .setBackground(
+                Background.Builder()
+                    .setColor(cardBackgroundColor())
+                    .setCorner(Corner.Builder().setRadius(dp(18f)).build())
+                    .build()
+            )
+            .build()
+
+    private fun MaterialScope.cardBackgroundColor(): ColorProp = colorScheme.surfaceContainerHigh.prop
+
+    private fun horizontalSpacer(widthDp: Float): LayoutElement =
+        Spacer.Builder()
+            .setWidth(dp(widthDp))
+            .build()
+
+    private fun verticalSpacer(heightDp: Float): LayoutElement =
+        Spacer.Builder()
             .setHeight(dp(heightDp))
             .build()
 
-    private fun text(
-        value: String,
-        sizeSp: Float,
-        color: Int,
-        bold: Boolean,
-    ): LayoutElementBuilders.LayoutElement =
-        LayoutElementBuilders.Text.Builder()
-            .setText(value)
-            .setFontStyle(
-                FontStyle.Builder()
-                    .setColor(argb(color))
-                    .setSize(sp(sizeSp))
-                    .apply {
-                        if (bold) {
-                            setWeight(LayoutElementBuilders.FONT_WEIGHT_BOLD)
-                        }
-                    }
-                    .build()
-            )
-            .setMaxLines(1)
-            .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE)
-            .build()
+    private fun apiSummary(data: DashboardData): String =
+        if (data.status.equals("ok", ignoreCase = true)) "API OK" else "API ERR"
 
-    private fun centeredText(
-        value: String,
-        sizeSp: Float,
-        color: Int,
-        bold: Boolean,
-    ): LayoutElementBuilders.LayoutElement =
-        LayoutElementBuilders.Box.Builder()
-            .setWidth(expand())
-            .addContent(text(value, sizeSp, color, bold))
-            .build()
+    private fun dbSummary(data: DashboardData): String =
+        if (data.dbConnected) "DB ${compactDbLatency(data.dbLatency)}" else "DB DN"
+
+    private fun MaterialScope.serverColor(data: DashboardData): LayoutColor = when {
+        data.gameServersTotal == 0 -> colorScheme.onSurface
+        data.gameServersExpired > 0 -> colorScheme.tertiary
+        data.gameServersActive == data.gameServersTotal -> colorScheme.primary
+        else -> colorScheme.onSurface
+    }
+
+    private fun MaterialScope.ticketColor(data: DashboardData): LayoutColor =
+        if (data.ticketsOpen > 0) colorScheme.error else colorScheme.primary
+
+    private fun compactDbLatency(value: String): String =
+        value.replace(" ", "").replace("milliseconds", "ms", ignoreCase = true).take(4)
+
+    private fun compactMessage(message: String): String =
+        message.replace('\n', ' ').trim().take(48)
 
     private fun shortNumber(value: Int): String = when {
         value >= 1_000_000 -> String.format(Locale.US, "%.1fM", value / 1_000_000f)
@@ -332,30 +289,6 @@ class MainTile : TileService() {
         else -> value.toString()
     }
 
-    private fun trimValue(value: String): String =
-        value.replace("memory", "", ignoreCase = true)
-            .replace("version", "v", ignoreCase = true)
-            .trim()
-            .take(9)
-
-    private fun latencyColor(latencyMs: Long): Int = when {
-        latencyMs < 150 -> GREEN
-        latencyMs < 500 -> AMBER
-        else -> RED
-    }
-
-    private fun loadColor(load: Double): Int = when {
-        load < 0.7 -> GREEN
-        load < 1.0 -> AMBER
-        else -> RED
-    }
-
-    private fun dp(value: Float) = androidx.wear.protolayout.DimensionBuilders.dp(value)
-
-    private fun sp(value: Float) = androidx.wear.protolayout.DimensionBuilders.sp(value)
-
-    private fun expand() =
-        androidx.wear.protolayout.DimensionBuilders.expand()
-
-    private fun argb(value: Int) = ColorProp.Builder(value).build()
+    private fun formatTime(epochMs: Long): String =
+        SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(epochMs))
 }
