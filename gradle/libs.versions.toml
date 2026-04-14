@@ -14,8 +14,14 @@ ktlint = "1.4.0"
 okhttp = "4.12.0"
 org-jetbrains-kotlin = "2.3.20"
 play-services-wearable = "19.0.0"
+protolayout = "1.4.0"
+protolayout-expression = "1.4.0"
+protolayout-material = "1.4.0"
 robolectric = "4.16.1"
 roborazzi = "1.59.0"
+tiles = "1.6.0"
+tiles-renderer = "1.6.0"
+tiles-testing = "1.6.0"
 ui-test-junit4 = "1.10.6"
 ui-test-manifest = "1.10.6"
 
@@ -24,6 +30,12 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "androidx-compose-bom" }
 androidx-compose-ui-tooling = { module = "androidx.wear.compose:compose-ui-tooling", version.ref = "compose-ui-tooling" }
 androidx-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
+androidx-protolayout = { module = "androidx.wear.protolayout:protolayout", version.ref = "protolayout" }
+androidx-protolayout-expression = { module = "androidx.wear.protolayout:protolayout-expression", version.ref = "protolayout-expression" }
+androidx-protolayout-material = { module = "androidx.wear.protolayout:protolayout-material", version.ref = "protolayout-material" }
+androidx-tiles = { module = "androidx.wear.tiles:tiles", version.ref = "tiles" }
+androidx-tiles-renderer = { module = "androidx.wear.tiles:tiles-renderer", version.ref = "tiles-renderer" }
+androidx-tiles-testing = { module = "androidx.wear.tiles:tiles-testing", version.ref = "tiles-testing" }
 androidx-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "ui-test-junit4" }
 androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "ui-test-manifest" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }

@@ -76,6 +76,24 @@ dependencies {
 
     val composeBom = platform(libs.androidx.compose.bom)
 
+    // Use to implement support for wear tiles
+    implementation(libs.androidx.tiles)
+
+    // Use to utilize standard components and layouts in your tiles
+    implementation(libs.androidx.protolayout)
+
+    // Use to utilize components and layouts with Material Design in your tiles
+    implementation(libs.androidx.protolayout.material)
+
+    // Use to include dynamic expressions in your tiles
+    implementation(libs.androidx.protolayout.expression)
+
+    // Use to preview wear tiles in your own app
+    debugImplementation(libs.androidx.tiles.renderer)
+
+    // Use to fetch tiles from a tile provider in your tests
+    testImplementation(libs.androidx.tiles.testing)
+
     // General compose dependencies
     implementation(composeBom)
     implementation(libs.androidx.activity.compose)
