@@ -1,23 +1,10 @@
-/*
- * Copyright 2021 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.jackinatox.android.composestarter.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jackinatox.android.composestarter.data.ConfigRepository
+import com.jackinatox.android.composestarter.data.DashboardData
 import com.jackinatox.android.composestarter.data.DashboardRepository
 import com.jackinatox.android.composestarter.data.WatchConfig
 import kotlinx.coroutines.Job
@@ -27,13 +14,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+private const val TAG = "MainViewModel"
+
 sealed interface WatchUiState {
     object Loading : WatchUiState
 
     object NoPairing : WatchUiState
 
     data class Dashboard(
-        val data: Map<String, String>,
+        val dashboardData: DashboardData?,   // null = no data received yet
         val isRefreshing: Boolean,
         val error: String?,
     ) : WatchUiState
@@ -50,12 +39,15 @@ class MainViewModel(
     private var refreshJob: Job? = null
 
     init {
+        Log.d(TAG, "ViewModel initialized")
         viewModelScope.launch {
             configRepository.configFlow.collect { config ->
                 refreshJob?.cancel()
                 if (config == null) {
+                    Log.i(TAG, "Config cleared → NoPairing")
                     _uiState.value = WatchUiState.NoPairing
                 } else {
+                    Log.i(TAG, "Config received → starting refresh loop for ${config.url}")
                     startRefreshLoop(config)
                 }
             }
@@ -63,15 +55,12 @@ class MainViewModel(
     }
 
     fun refreshNow() {
-        val current = _uiState.value
-        if (current is WatchUiState.Dashboard) {
+        if (_uiState.value is WatchUiState.Dashboard) {
+            Log.d(TAG, "Manual refresh triggered")
             refreshJob?.cancel()
-            // Re-read config from the flow's last emission via a one-shot launch
             viewModelScope.launch {
                 configRepository.configFlow.collect { config ->
-                    if (config != null) {
-                        startRefreshLoop(config)
-                    }
+                    if (config != null) startRefreshLoop(config)
                     return@collect
                 }
             }
@@ -79,37 +68,38 @@ class MainViewModel(
     }
 
     private fun startRefreshLoop(config: WatchConfig) {
-        refreshJob =
-            viewModelScope.launch {
-                while (true) {
-                    val current = _uiState.value
-                    val currentData =
-                        if (current is WatchUiState.Dashboard) current.data else emptyMap()
-                    _uiState.value =
-                        WatchUiState.Dashboard(
-                            data = currentData,
-                            isRefreshing = true,
-                            error = null
-                        )
+        refreshJob = viewModelScope.launch {
+            while (true) {
+                val prevData = (_uiState.value as? WatchUiState.Dashboard)?.dashboardData
+                _uiState.value = WatchUiState.Dashboard(
+                    dashboardData = prevData,
+                    isRefreshing = true,
+                    error = null,
+                )
 
-                    val result = dashboardRepository.fetchData(config)
-                    _uiState.value =
-                        if (result.isSuccess) {
-                            WatchUiState.Dashboard(
-                                data = result.getOrThrow(),
-                                isRefreshing = false,
-                                error = null
-                            )
-                        } else {
-                            WatchUiState.Dashboard(
-                                data = currentData,
-                                isRefreshing = false,
-                                error = result.exceptionOrNull()?.message ?: "Unknown error"
-                            )
-                        }
+                val result = dashboardRepository.fetchData(config)
 
-                    delay(5 * 60_000L)
+                if (result.isSuccess) {
+                    val data = result.getOrThrow()
+                    Log.i(TAG, "Fetch SUCCESS — ${data.latencyMs}ms")
+                    _uiState.value = WatchUiState.Dashboard(
+                        dashboardData = data,
+                        isRefreshing = false,
+                        error = null,
+                    )
+                } else {
+                    val msg = result.exceptionOrNull()?.message ?: "Unknown error"
+                    Log.w(TAG, "Fetch FAILED — $msg")
+                    _uiState.value = WatchUiState.Dashboard(
+                        dashboardData = prevData,
+                        isRefreshing = false,
+                        error = msg,
+                    )
                 }
+
+                Log.d(TAG, "Next refresh in 5 minutes")
+                delay(5 * 60_000L)
             }
+        }
     }
 }

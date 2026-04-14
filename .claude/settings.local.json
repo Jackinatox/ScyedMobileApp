@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./gradlew :app:assembleDebug --no-configuration-cache)"
+      "Bash(./gradlew :app:assembleDebug --no-configuration-cache)",
+      "Bash(./gradlew assembleDebug)"
     ]
   }
 }

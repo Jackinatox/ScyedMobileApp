@@ -34,17 +34,21 @@ class ConfigListenerService : WearableListenerService() {
     private val configRepository by lazy { ConfigRepository(applicationContext) }
 
     override fun onMessageReceived(message: MessageEvent) {
-        Log.d(TAG, "Message received: ${message.path}")
+        Log.d(TAG, "── Message received: path=${message.path}  size=${message.data.size}B")
         if (message.path == "/config/initialSetup") {
             try {
-                val json = JSONObject(String(message.data, Charsets.UTF_8))
+                val raw = String(message.data, Charsets.UTF_8)
+                Log.d(TAG, "│ raw payload: $raw")
+                val json = JSONObject(raw)
                 val url = json.getString("url")
                 val apiKey = json.getString("api_key")
-                Log.v(TAG, "Got url: $url and key: $apiKey")
+                Log.i(TAG, "✓ Config parsed  url=$url  key=${apiKey.take(4)}****")
                 scope.launch { configRepository.saveConfig(WatchConfig(url, apiKey)) }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to parse config message", e)
+                Log.e(TAG, "✗ Failed to parse config message", e)
             }
+        } else {
+            Log.d(TAG, "Ignoring unhandled path: ${message.path}")
         }
     }
 
